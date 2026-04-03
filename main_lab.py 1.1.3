@@ -1,0 +1,64 @@
+from backend.kocni_engine import analyze_geometry, analyze_text, analyze_data, store_memory
+from backend.kocni_discovery_engine import discover_equation
+
+print("🧠 KOCNI LABORATORY v2")
+print("----------------------")
+
+# ----------------------
+# GEOMETRÍA
+# ----------------------
+
+points=[
+(1,2,3),
+(2,3,4),
+(3,4,5),
+(4,5,6)
+]
+
+geo=analyze_geometry(points)
+
+print("\nGEOMETRÍA")
+print(geo)
+
+store_memory("geometry_test",geo["embedding"])
+
+# ----------------------
+# TEXTO
+# ----------------------
+
+text="HELLO WORLD HELLO AI"
+
+txt=analyze_text(text)
+
+print("\nTEXTO")
+print(txt)
+
+store_memory("text_test",txt["embedding"])
+
+# ----------------------
+# DATOS
+# ----------------------
+
+data=[2,4,6,8,10]
+
+dat=analyze_data(data)
+
+print("\nDATOS")
+print(dat)
+
+store_memory("data_test",dat["embedding"])
+
+# ----------------------
+# DESCUBRIMIENTO
+# ----------------------
+
+x=[1,2,3,4,5]
+y=[2,4,6,8,10]
+
+model=discover_equation(x,y)
+
+print("\nDESCUBRIMIENTO CIENTÍFICO")
+
+print("Modelo encontrado:")
+
+print(model)
