@@ -1,0 +1,127 @@
+import numpy as np
+import requests
+import feedparser
+from collections import defaultdict
+import time
+
+print("🧠 KOCNI ∞ + CerebroAnticipacionIA ULTRA GLOBAL ONLINE")
+print("=================================")
+
+# ================= MEMORIA ESTRATÉGICA =================
+memoria_global = defaultdict(list)
+
+# ================= CEREBRO DE ANTICIPACIÓN =================
+class CerebroAnticipacionIA:
+    def __init__(self, umbral_theta=0.7, alfa=0.6, beta=0.4):
+        self.theta = umbral_theta
+        self.alfa = alfa
+        self.beta = beta
+        self.historial_exp = []
+
+    def tallo_cerebral_energia(self, tension, energia_equipo):
+        E = tension / (energia_equipo + 1e-5)
+        prob_estabilidad = np.exp(-E)
+        return E, prob_estabilidad
+
+    def sistema_limbico_sh(self, c, p, i, e, t):
+        return {"c": c, "p": p, "i": i, "e": e, "t": t}
+
+    def hipocampo_haf(self, sH, contexto_valor):
+        exp_previa = np.mean(self.historial_exp) if self.historial_exp else 0.5
+        haf_score = (sH['c'] + sH['p'] + sH['i']) / 3 * contexto_valor * exp_previa
+        return np.clip(haf_score, 0, 1)
+
+    def corteza_prefrontal_iao(self, sH, contexto):
+        senales = self.sistema_limbico_sh(**sH)
+        haf = self.hipocampo_haf(senales, contexto)
+        energia, estabilidad = self.tallo_cerebral_energia(senales['t'], senales['e'])
+        riesgo_ia = 1 - estabilidad
+        iao = (self.alfa * haf) + (self.beta * riesgo_ia)
+        self.historial_exp.append(iao)
+        intervencion = iao > self.theta
+        return {
+            "Nivel_IAO": round(iao, 4),
+            "Riesgo_IA": round(riesgo_ia, 4),
+            "HAF_Humano": round(haf, 4),
+            "ESTADO_ACCION": "⚠️ INTERVENIR" if intervencion else "✅ ESTABLE"
+        }
+
+# ================= MODULOS DE DATOS GLOBALES =================
+def obtener_clima(lat=22.151, lon=-100.98):
+    try:
+        url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true"
+        r = requests.get(url, timeout=10)
+        data = r.json()
+        return {"temperatura": data["current_weather"]["temperature"]}
+    except:
+        return {"temperatura": None}
+
+def obtener_sismos():
+    try:
+        url="https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=5"
+        r=requests.get(url, timeout=10)
+        data = r.json()
+        return [{"magnitud": f["properties"]["mag"], "lugar": f["properties"]["place"]} for f in data["features"]]
+    except:
+        return []
+
+def obtener_noticias(rss_url="https://www.bbc.com/mundo/index.xml"):
+    feed = feedparser.parse(rss_url)
+    noticias = []
+    for entry in feed.entries[:5]:
+        noticias.append({"titulo": entry.title, "link": entry.link})
+    return noticias
+
+# ================= SIMULADOR GLOBAL =================
+def simulador_global():
+    ia = CerebroAnticipacionIA(umbral_theta=0.6, alfa=0.7, beta=0.5)
+    print("\n🌐 Simulador Interactivo ULTRA GLOBAL")
+    print("Escribe 'run' para actualizar datos o 'salir' para terminar.\n")
+
+    while True:
+        comando = input("👤 Tú: ").strip().lower()
+        if comando in ["salir","exit","quit"]:
+            print("🧠 ULTRA GLOBAL SIMULADOR cerrado.")
+            break
+        if comando != "run":
+            print("Comando no reconocido, escribe 'run' o 'salir'.")
+            continue
+
+        # --- Recoger datos ---
+        clima = obtener_clima()
+        sismos = obtener_sismos()
+        noticias = obtener_noticias()
+
+        # --- Generar señales de riesgo ---
+        # Aquí simulamos señales humanas vs riesgos globales
+        tension = min(1, len(sismos)*0.2 + len(noticias)*0.05)
+        energia_equipo = np.random.uniform(0.3, 0.9)
+        sH = {"c": np.random.uniform(0.3,0.7),
+              "p": np.random.uniform(0.3,0.7),
+              "i": np.random.uniform(0.3,0.7),
+              "e": energia_equipo,
+              "t": tension}
+
+        # --- Evaluar IA ---
+        ia_result = ia.corteza_prefrontal_iao(sH, contexto=1.2)
+
+        # --- Guardar solo lo relevante ---
+        memoria_global["clima"].append(clima)
+        memoria_global["sismos"].append(sismos)
+        memoria_global["noticias"].append(noticias)
+        memoria_global["ia_decisiones"].append(ia_result)
+
+        # --- Mostrar resumen ---
+        print("\n--- RESUMEN GLOBAL ---")
+        print(f"Clima: {clima}")
+        print(f"Sismos recientes: {sismos if sismos else 'No disponibles'}")
+        print("Noticias relevantes:")
+        for n in noticias: print(f"- {n['titulo']}")
+        print(f"\nNivel de intervención IA: {ia_result['ESTADO_ACCION']}")
+        print(f"Nivel IAO: {ia_result['Nivel_IAO']} | Riesgo IA: {ia_result['Riesgo_IA']} | HAF Humano: {ia_result['HAF_Humano']}")
+        print("🔧 Memoria estratégica actualizada.\n")
+        time.sleep(1)
+
+# ================= EJECUCIÓN =================
+if __name__=="__main__":
+    simulador_global()
