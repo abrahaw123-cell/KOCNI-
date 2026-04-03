@@ -1,0 +1,135 @@
+import numpy as np
+import networkx as nx
+
+memory_graph = nx.Graph()
+
+def sigmoid(x):
+    return 1/(1+np.exp(-x))
+
+def fake_nn(features):
+
+    s=0
+
+    for i,f in enumerate(features):
+
+        if i%3==0:
+            s+=f*1.2
+        elif i%3==1:
+            s-=f*0.8
+        else:
+            s+=f*0.5
+
+    return (
+        s*0.3,
+        sigmoid(s*0.6+0.4),
+        sigmoid(-s*0.4+0.7)
+    )
+
+# ----------------------
+# GEOMETRÍA
+# ----------------------
+
+def analyze_geometry(points):
+
+    features=np.zeros(16)
+
+    for x,y,z in points:
+
+        r=np.sqrt(x**2+y**2+z**2)+1e-8
+
+        features[0]+=z/r
+        features[1]+=(x**2-y**2)/(r**2)
+        features[2]+=(x*y)/(r**2)
+        features[3]+=r
+
+    features/=len(points)
+
+    energy,stab,react=fake_nn(features)
+
+    return {
+        "energy":float(energy),
+        "stability":float(stab),
+        "reactivity":float(react),
+        "embedding":features.tolist()
+    }
+
+# ----------------------
+# TEXTO
+# ----------------------
+
+def analyze_text(text):
+
+    clean=''.join(c for c in text.upper() if c.isalpha())
+
+    freq={}
+
+    for c in clean:
+        freq[c]=freq.get(c,0)+1
+
+    vals=list(freq.values())
+
+    signal=np.zeros(16)
+
+    if len(vals)>0:
+
+        mx=max(vals)
+
+        for i,v in enumerate(vals[:16]):
+            signal[i]=v/mx
+
+    comp,pat,ent=fake_nn(signal)
+
+    return {
+        "complexity":float(comp),
+        "pattern":float(pat),
+        "entropy":float(ent),
+        "embedding":signal.tolist()
+    }
+
+# ----------------------
+# DATOS
+# ----------------------
+
+def analyze_data(nums):
+
+    nums=np.array(nums)
+
+    features=np.zeros(16)
+
+    features[0]=np.mean(nums)
+    features[1]=np.std(nums)
+    features[2]=np.max(nums)
+    features[3]=np.min(nums)
+
+    trend,stab,risk=fake_nn(features)
+
+    return {
+        "trend":float(trend),
+        "stability":float(stab),
+        "risk":float(risk),
+        "embedding":features.tolist()
+    }
+
+# ----------------------
+# MEMORIA
+# ----------------------
+
+def store_memory(label,embedding):
+
+    memory_graph.add_node(label,vec=np.array(embedding))
+
+    for node in memory_graph.nodes:
+
+        if node==label:
+            continue
+
+        v1=np.array(embedding)
+        v2=memory_graph.nodes[node]["vec"]
+
+        sim=np.dot(v1,v2)/(np.linalg.norm(v1)*np.linalg.norm(v2)+1e-8)
+
+        if sim>0.8:
+
+            memory_graph.add_edge(label,node,weight=float(sim))
+
+    return len(memory_graph.nodes)
