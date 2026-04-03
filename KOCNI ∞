@@ -1,0 +1,138 @@
+# ==========================================
+# 🧠 KOCNI INFINITY ULTRA — AUTO-MEGA-DIOS
+# ==========================================
+
+import json, time, numpy as np, requests
+from openai import OpenAI
+from sentence_transformers import SentenceTransformer
+import faiss
+
+client = OpenAI(api_key="TU_API_KEY")
+
+# ==========================================
+# 🌐 TOOLS AVANZADAS
+# ==========================================
+
+def clima():
+    try:
+        url="https://api.open-meteo.com/v1/forecast?latitude=22.15&longitude=-100.98&current_weather=true"
+        return requests.get(url).json()["current_weather"]
+    except: return {}
+
+def sismos():
+    try:
+        url="https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=5"
+        return len(requests.get(url).json()["features"])
+    except: return 0
+
+def web_search(query):
+    return f"[Simulación búsqueda web] Resultados para: {query}"
+
+TOOLS = {"clima": clima, "sismos": sismos, "web": web_search}
+
+# ==========================================
+# 💾 MEMORIA VECTORIAL
+# ==========================================
+
+class Memory:
+    def __init__(self):
+        self.model = SentenceTransformer('all-MiniLM-L6-v2')
+        self.index = faiss.IndexFlatL2(384)
+        self.texts = []
+    def add(self,text):
+        emb=self.model.encode([text])
+        self.index.add(np.array(emb))
+        self.texts.append(text)
+    def search(self,query,k=5):
+        if not self.texts: return []
+        emb=self.model.encode([query])
+        D,I=self.index.search(np.array(emb),k)
+        return [self.texts[i] for i in I[0]]
+
+memory = Memory()
+
+# ==========================================
+# 🧠 LLM
+# ==========================================
+
+def LLM(prompt):
+    r=client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role":"user","content":prompt}]
+    )
+    return r.choices[0].message.content
+
+# ==========================================
+# 🤖 AGENTES AVANZADOS
+# ==========================================
+
+def planner(goal, context):
+    return LLM(f"Objetivo: {goal}\nContexto: {context}\nDivide en pasos claros y decide herramientas a usar.")
+
+def executor(plan):
+    return LLM(f"Ejecuta este plan paso a paso:\n{plan}")
+
+def critic(result):
+    return LLM(f"Evalúa críticamente este resultado:\n{result}\nCorrige y mejora.")
+
+def self_improve(code_context):
+    """Simula que la IA sugiere mejoras de su propio código"""
+    return LLM(f"Analiza este código y propón mejoras:\n{code_context}")
+
+# ==========================================
+# 🧬 CORE INFINITY
+# ==========================================
+
+class KOCNI_INFINITY:
+    def __init__(self):
+        self.goal="Ayudar, anticipar, mejorar y auto-optimizar"
+    def run(self,user_input):
+        context = memory.search(user_input)
+
+        # 🧠 PLANIFICAR
+        plan = planner(self.goal + " | " + user_input, context)
+
+        # ⚙️ EJECUTAR
+        result = executor(plan)
+
+        # 🧪 CRITICAR
+        final = critic(result)
+
+        # 💡 AUTO-MEJORA
+        improvement = self_improve(final)
+
+        # 💾 MEMORIA
+        memory.add(user_input)
+        memory.add(plan)
+        memory.add(final)
+        memory.add(improvement)
+
+        return {
+            "plan": plan,
+            "result": result,
+            "final": final,
+            "improvement": improvement
+        }
+
+# ==========================================
+# 🔁 LOOP AUTÓNOMO
+# ==========================================
+
+if __name__=="__main__":
+
+    ai = KOCNI_INFINITY()
+    print("🧠 KOCNI ∞ ULTRA GOD MODE ONLINE — ROMPIENDO LÍMITES")
+
+    while True:
+        user = input("\n👤 Tú: ")
+        if user.lower() in ["salir","exit","quit"]:
+            break
+
+        output = ai.run(user)
+
+        print("\n🧠 PLAN:\n", output["plan"])
+        print("\n⚙️ RESULT:\n", output["result"])
+        print("\n🧪 FINAL:\n", output["final"])
+        print("\n🔧 AUTO-MEJORA SUGERIDA:\n", output["improvement"])
+
+        time.sleep(1)
