@@ -1,0 +1,145 @@
+import numpy as np
+import random
+
+
+# =========================================
+# ABRANGOCHI SIMULATION
+# =========================================
+
+class Molecula:
+
+    def __init__(self, i):
+
+        self.id = i
+        self.energia = random.uniform(40, 60)
+
+    def fluctuar(self):
+
+        cambio = random.uniform(-2, 2)
+        self.energia = max(0, min(100, self.energia + cambio))
+
+
+class Abrangochi:
+
+    def __init__(self, n=8):
+
+        self.moleculas = [Molecula(i) for i in range(n)]
+
+    def paso(self):
+
+        for m in self.moleculas:
+            m.fluctuar()
+
+        energia_total = [m.energia for m in self.moleculas]
+
+        return energia_total
+
+
+# =========================================
+# KOCNI SIGNAL ENGINE
+# =========================================
+
+class SignalEngine:
+
+    def transform(self, signal):
+
+        spectrum = np.fft.fft(signal)
+        energy = np.abs(spectrum) ** 2
+
+        return energy
+
+
+# =========================================
+# MEMORY
+# =========================================
+
+class PatternMemory:
+
+    def __init__(self):
+
+        self.patterns = []
+
+    def store(self, pattern):
+
+        self.patterns.append(pattern)
+
+
+# =========================================
+# ANTICIPATION ENGINE
+# =========================================
+
+class AnticipationEngine:
+
+    def evaluate(self, energy):
+
+        score = np.mean(energy)
+
+        if score > 80:
+            return "critical dynamics"
+
+        if score > 40:
+            return "emerging trend"
+
+        return "stable system"
+
+
+# =========================================
+# KOCNI CORE
+# =========================================
+
+class KOCNI:
+
+    def __init__(self):
+
+        self.signal_engine = SignalEngine()
+        self.memory = PatternMemory()
+        self.anticipation = AnticipationEngine()
+
+    def observe(self, system_state):
+
+        signal = np.array(system_state)
+
+        energy = self.signal_engine.transform(signal)
+
+        prediction = self.anticipation.evaluate(energy)
+
+        self.memory.store(energy)
+
+        return prediction
+
+
+# =========================================
+# SYSTEM FUSION
+# =========================================
+
+class CognitiveSystem:
+
+    def __init__(self):
+
+        self.simulation = Abrangochi()
+        self.ai = KOCNI()
+
+    def cycle(self):
+
+        estado = self.simulation.paso()
+
+        prediction = self.ai.observe(estado)
+
+        return estado, prediction
+
+
+# =========================================
+# RUN
+# =========================================
+
+if __name__ == "__main__":
+
+    sistema = CognitiveSystem()
+
+    for i in range(10):
+
+        estado, pred = sistema.cycle()
+
+        print("\nCiclo:", i+1)
+        print("Energía sistema:", estado)
+        print("KOCNI detecta:", pred)
