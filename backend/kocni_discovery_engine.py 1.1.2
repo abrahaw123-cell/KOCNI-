@@ -1,0 +1,55 @@
+import numpy as np
+
+FUNCTIONS = {
+    "x": lambda x: x,
+    "x^2": lambda x: x**2,
+    "sqrt(x)": lambda x: np.sqrt(np.abs(x)),
+    "log(x)": lambda x: np.log(np.abs(x)+1e-8),
+    "sin(x)": lambda x: np.sin(x),
+    "cos(x)": lambda x: np.cos(x)
+}
+
+def evaluate_model(func,x,a,b):
+
+    try:
+        y_pred=a*func(x)+b
+        return y_pred
+    except:
+        return None
+
+def mse(y,y_pred):
+    return np.mean((y-y_pred)**2)
+
+def discover_equation(x,y):
+
+    x=np.array(x)
+    y=np.array(y)
+
+    best_error=float("inf")
+    best_model=None
+
+    for name,func in FUNCTIONS.items():
+
+        for a in np.linspace(-10,10,40):
+
+            for b in np.linspace(-10,10,40):
+
+                y_pred=evaluate_model(func,x,a,b)
+
+                if y_pred is None:
+                    continue
+
+                err=mse(y,y_pred)
+
+                if err<best_error:
+
+                    best_error=err
+
+                    best_model={
+                        "function":name,
+                        "a":float(a),
+                        "b":float(b),
+                        "error":float(err)
+                    }
+
+    return best_model
