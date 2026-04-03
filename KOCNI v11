@@ -1,0 +1,310 @@
+import numpy as np
+import requests
+import sympy as sp
+from scipy.integrate import solve_ivp
+from datetime import datetime
+import json
+
+# Vision artificial
+import cv2
+
+print("🧠 KOCNI v11 - Cognitive Scientific AI")
+
+# =====================================================
+# MEMORIA
+# =====================================================
+
+class Memory:
+
+    def __init__(self):
+        self.knowledge = []
+        self.patterns = []
+
+    def store(self, item):
+        self.knowledge.append(item)
+
+    def store_pattern(self, pattern):
+        self.patterns.append(pattern)
+
+memory = Memory()
+
+# =====================================================
+# MOTOR CIENTÍFICO
+# =====================================================
+
+def discover_physical_laws(x,y):
+
+    x=np.array(x,dtype=float)
+    y=np.array(y,dtype=float)
+
+    coef=np.polyfit(x,y,2)
+
+    xs=sp.symbols('x')
+    expr=sum(c*xs**i for i,c in enumerate(reversed(coef)))
+
+    return {
+        "equation":str(sp.simplify(expr)),
+        "coefficients":coef.tolist()
+    }
+
+
+def simulate_pendulum(L=1.0,g=9.81):
+
+    period=2*np.pi*np.sqrt(L/g)
+
+    return {
+        "system":"pendulum",
+        "period":round(period,3)
+    }
+
+# =====================================================
+# OBSERVACIÓN DEL MUNDO
+# =====================================================
+
+def earthquake_monitor():
+
+    url="https://earthquake.usgs.gov/fdsnws/event/1/query"
+
+    params={
+        "format":"geojson",
+        "limit":5,
+        "minmagnitude":4.5
+    }
+
+    try:
+
+        r=requests.get(url,params=params,timeout=10)
+        data=r.json()
+
+        events=[f["properties"]["mag"] for f in data["features"]]
+
+        return events
+
+    except:
+        return []
+
+
+def climate_monitor():
+
+    url="https://api.open-meteo.com/v1/forecast?latitude=22.151&longitude=-100.98&current_weather=true"
+
+    try:
+
+        r=requests.get(url)
+        temp=r.json()["current_weather"]["temperature"]
+
+        return temp
+
+    except:
+        return 24
+
+# =====================================================
+# MOTOR HAS (ANTICIPACIÓN)
+# =====================================================
+
+def has_predictor(series,horizon=5):
+
+    data=np.array(series)
+
+    trend=np.polyfit(range(len(data)),data,1)[0]
+
+    forecast=[]
+    last=data[-1]
+
+    for i in range(horizon):
+
+        next_val=last+trend+0.2*np.sin(i)
+
+        forecast.append(round(float(next_val),2))
+
+        last=next_val
+
+    return forecast
+
+# =====================================================
+# DETECCIÓN DE PATRONES
+# =====================================================
+
+def detect_patterns(data):
+
+    data=np.array(data)
+
+    mean=np.mean(data)
+    std=np.std(data)
+
+    anomalies=data[np.abs(data-mean)>2*std]
+
+    pattern={
+        "mean":float(mean),
+        "std":float(std),
+        "anomalies":anomalies.tolist()
+    }
+
+    memory.store_pattern(pattern)
+
+    return pattern
+
+# =====================================================
+# DECODIFICADOR DE ALFABETOS
+# =====================================================
+
+def alphabet_decoder(text):
+
+    freq={}
+
+    for c in text:
+
+        if c not in freq:
+            freq[c]=0
+
+        freq[c]+=1
+
+    sorted_freq=sorted(freq.items(),key=lambda x:x[1],reverse=True)
+
+    return sorted_freq
+
+# =====================================================
+# VISIÓN ARTIFICIAL
+# =====================================================
+
+def vision_analyzer(image_path):
+
+    img=cv2.imread(image_path)
+
+    if img is None:
+        return {"error":"image not found"}
+
+    gray=cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+
+    edges=cv2.Canny(gray,100,200)
+
+    edge_count=np.sum(edges>0)
+
+    return {
+        "edges_detected":int(edge_count),
+        "resolution":img.shape
+    }
+
+# =====================================================
+# AUTO APRENDIZAJE
+# =====================================================
+
+class SimpleLearner:
+
+    def __init__(self):
+
+        self.weights=np.random.rand(3)
+
+    def train(self,x,y):
+
+        x=np.array(x)
+        y=np.array(y)
+
+        coef=np.polyfit(x,y,1)
+
+        self.weights=coef
+
+    def predict(self,x):
+
+        return self.weights[0]*x+self.weights[1]
+
+learner=SimpleLearner()
+
+# =====================================================
+# CEREBRO CENTRAL
+# =====================================================
+
+class KOCNIBrain:
+
+    def observe_world(self):
+
+        quakes=earthquake_monitor()
+        temp=climate_monitor()
+
+        return {
+            "earthquakes":quakes,
+            "temperature":temp
+        }
+
+    def analyze_patterns(self,data):
+
+        return detect_patterns(data)
+
+    def predict_future(self,data):
+
+        return has_predictor(data)
+
+    def run_science(self):
+
+        law=discover_physical_laws(
+            [1,2,3,4,5],
+            [9.8,19.6,29.4,39.2,49.0]
+        )
+
+        sim=simulate_pendulum()
+
+        return {
+            "law":law,
+            "simulation":sim
+        }
+
+    def decode_language(self,text):
+
+        return alphabet_decoder(text)
+
+    def analyze_image(self,path):
+
+        return vision_analyzer(path)
+
+    def learn(self,x,y):
+
+        learner.train(x,y)
+
+    def execute(self):
+
+        print("\n🌍 Observando mundo")
+
+        world=self.observe_world()
+
+        print("Sismos:",world["earthquakes"])
+        print("Temperatura:",world["temperature"])
+
+        print("\n📊 Analizando patrones")
+
+        pattern=self.analyze_patterns([22,23,24,23,25])
+
+        print(pattern)
+
+        print("\n🔮 Predicción")
+
+        pred=self.predict_future([22,23,24,23,25])
+
+        print(pred)
+
+        print("\n🔬 Ciencia")
+
+        science=self.run_science()
+
+        print(science)
+
+        print("\n🔤 Decoder")
+
+        decoded=self.decode_language("aaabbcdddde")
+
+        print(decoded)
+
+        print("\n🧠 Memoria almacenada")
+
+        memory.store(science)
+
+        print(len(memory.knowledge),"conocimientos guardados")
+
+# =====================================================
+# EJECUCIÓN
+# =====================================================
+
+if __name__=="__main__":
+
+    brain=KOCNIBrain()
+
+    brain.execute()
