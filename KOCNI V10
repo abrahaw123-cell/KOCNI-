@@ -1,0 +1,270 @@
+import numpy as np
+import requests
+import sympy as sp
+from scipy.integrate import solve_ivp
+from datetime import datetime
+import json
+
+print("🧠 KOCNI v10 - Cognitive Scientific AI")
+print("=====================================")
+
+# =====================================================
+# 1. MOTOR DE DESCUBRIMIENTO DE LEYES (AI Feynman lite)
+# =====================================================
+
+def discover_physical_laws(x, y, max_degree=4):
+
+    x = np.array(x, dtype=float)
+    y = np.array(y, dtype=float)
+
+    coef = np.polyfit(x, y, max_degree)
+    predicted = np.polyval(coef, x)
+
+    mse = float(np.mean((y - predicted)**2))
+    r2 = 1 - (mse / np.var(y)) if np.var(y) > 1e-8 else 1.0
+
+    xs = sp.symbols('x')
+    expr = sum(c * xs**i for i, c in enumerate(reversed(coef)))
+    simplified = sp.simplify(expr)
+
+    return {
+        "equation": str(simplified),
+        "coefficients": coef.tolist(),
+        "mse": round(mse,6),
+        "r2": round(r2,4)
+    }
+
+
+# =====================================================
+# 2. SIMULADOR FÍSICO
+# =====================================================
+
+def simulate_physics(system="pendulum", params=None, t_max=10):
+
+    if params is None:
+        params = {}
+
+    t = np.linspace(0, t_max, 500)
+
+    if system == "pendulum":
+
+        L = params.get("length",1.0)
+        g = params.get("g",9.81)
+        theta0 = np.deg2rad(params.get("initial_angle",30))
+
+        def ode(t,y):
+            theta,omega = y
+            dtheta = omega
+            domega = -(g/L)*np.sin(theta)
+            return [dtheta,domega]
+
+        sol = solve_ivp(ode,[0,t_max],[theta0,0],t_eval=t)
+
+        period = 2*np.pi*np.sqrt(L/g)
+
+        return {
+            "system":"pendulum",
+            "period":round(period,3),
+            "theta":sol.y[0].tolist()
+        }
+
+    if system == "freefall":
+
+        g = params.get("g",9.81)
+
+        pos = 0.5*g*t**2
+        vel = g*t
+
+        return {
+            "system":"freefall",
+            "position":pos.tolist(),
+            "velocity":vel.tolist()
+        }
+
+    return {"error":"unknown system"}
+
+
+# =====================================================
+# 3. DATOS REALES (TIERRA)
+# =====================================================
+
+def fetch_earthquake_data(limit=10):
+
+    url="https://earthquake.usgs.gov/fdsnws/event/1/query"
+
+    params={
+        "format":"geojson",
+        "limit":limit,
+        "minmagnitude":4.5,
+        "orderby":"time"
+    }
+
+    try:
+
+        r=requests.get(url,params=params,timeout=10)
+        data=r.json()
+
+        events=[]
+
+        for f in data["features"]:
+
+            events.append({
+                "mag":f["properties"]["mag"],
+                "place":f["properties"]["place"]
+            })
+
+        return {"events":events,"count":len(events)}
+
+    except:
+        return {"events":[],"count":0}
+
+
+# =====================================================
+# 4. DATOS CLIMÁTICOS
+# =====================================================
+
+def fetch_climate_data(lat=22.151,lon=-100.98):
+
+    url=f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true"
+
+    try:
+
+        r=requests.get(url,timeout=10)
+        data=r.json()
+
+        temp=data["current_weather"]["temperature"]
+
+        return {
+            "temperature":temp,
+            "summary":f"Temperatura actual: {temp}°C"
+        }
+
+    except:
+
+        return {
+            "temperature":24,
+            "summary":"dato simulado"
+        }
+
+
+# =====================================================
+# 5. MOTOR HAS (ANTICIPACIÓN)
+# =====================================================
+
+def has_predictor(series,horizon=5):
+
+    data=np.array(series,dtype=float)
+
+    trend=np.polyfit(range(len(data)),data,1)[0]
+
+    forecast=[]
+    last=data[-1]
+
+    for i in range(horizon):
+
+        next_val=last+trend+0.2*np.sin(i)
+
+        forecast.append(round(float(next_val),2))
+
+        last=next_val
+
+    return {
+        "trend":round(float(trend),4),
+        "forecast":forecast
+    }
+
+
+# =====================================================
+# 6. MOTOR DE PATRONES
+# =====================================================
+
+def detect_patterns(data):
+
+    data=np.array(data)
+
+    mean=np.mean(data)
+    std=np.std(data)
+
+    anomalies=data[np.abs(data-mean)>2*std]
+
+    return {
+        "mean":round(float(mean),3),
+        "std":round(float(std),3),
+        "anomalies":anomalies.tolist()
+    }
+
+
+# =====================================================
+# 7. CEREBRO KOCNI (CORE)
+# =====================================================
+
+def kocni_brain():
+
+    print("\n🧠 Activando cerebro KOCNI...\n")
+
+    # descubrimiento científico
+    print("1️⃣ Descubriendo ley física")
+
+    law=discover_physical_laws(
+        [1,2,3,4,5],
+        [9.8,19.6,29.4,39.2,49.0]
+    )
+
+    print("Ley encontrada:",law["equation"])
+
+
+    # simulación
+
+    print("\n2️⃣ Simulación física")
+
+    sim=simulate_physics("pendulum",{
+        "length":1.0,
+        "initial_angle":60
+    })
+
+    print("Periodo:",sim["period"])
+
+
+    # datos del mundo real
+
+    print("\n3️⃣ Observando la Tierra")
+
+    eq=fetch_earthquake_data()
+
+    print("Sismos recientes:",eq["count"])
+
+
+    clima=fetch_climate_data()
+
+    print(clima["summary"])
+
+
+    # predicción HAS
+
+    print("\n4️⃣ Predicción anticipativa")
+
+    series=[22.3,23.0,23.5,24.0,24.4]
+
+    pred=has_predictor(series)
+
+    print("Pronóstico:",pred["forecast"])
+
+
+    # detección de anomalías
+
+    print("\n5️⃣ Análisis de patrones")
+
+    pattern=detect_patterns(series)
+
+    print("Media:",pattern["mean"])
+
+
+    print("\n✅ KOCNI v10 ejecución completa")
+
+
+# =====================================================
+# EJECUCIÓN
+# =====================================================
+
+if __name__=="__main__":
+    kocni_brain()
