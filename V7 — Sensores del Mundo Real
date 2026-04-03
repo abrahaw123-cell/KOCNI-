@@ -1,0 +1,289 @@
+import streamlit as st
+import requests
+import numpy as np
+import pandas as pd
+import plotly.express as px
+import random
+
+
+# -----------------------------
+# GENOMA COGNITIVO
+# -----------------------------
+
+class CognitiveGenome:
+
+    def __init__(self):
+        self.genes = np.random.rand(5)
+
+    def mutate(self):
+        i = random.randint(0,4)
+        self.genes[i] += np.random.normal(0,0.05)
+
+    def crossover(self, other):
+        child = CognitiveGenome()
+        child.genes = (self.genes + other.genes) / 2
+        return child
+
+
+# -----------------------------
+# AGENTE
+# -----------------------------
+
+class Agent:
+
+    def __init__(self):
+
+        self.genome = CognitiveGenome()
+
+        self.phi = np.random.rand()
+
+        self.position = np.random.rand(2)
+
+
+    def behavior_density(self):
+
+        return abs(self.phi)**2
+
+
+    def update_state(self, V_eff):
+
+        tension = np.gradient([self.phi])[0]
+
+        self.phi += -0.5 * tension + V_eff
+
+
+# -----------------------------
+# MOTOR HAS
+# -----------------------------
+
+class HASEngine:
+
+    def __init__(self):
+
+        self.history = []
+
+
+    def observe(self, rho):
+
+        self.history.append(rho)
+
+        if len(self.history) > 100:
+            self.history.pop(0)
+
+
+    def pattern(self):
+
+        if len(self.history) < 10:
+            return None
+
+        return np.mean(self.history)
+
+
+# -----------------------------
+# KOCNI
+# -----------------------------
+
+class KOCNI:
+
+    def __init__(self):
+
+        self.patterns = []
+
+
+    def analyze(self, agents):
+
+        densities = [a.behavior_density() for a in agents]
+
+        pattern = np.mean(densities)
+
+        self.patterns.append(pattern)
+
+        return pattern
+
+
+    def anticipate(self):
+
+        if len(self.patterns) < 5:
+            return None
+
+        x = np.arange(len(self.patterns))
+
+        trend = np.polyfit(x,self.patterns,1)
+
+        return trend[0]
+
+
+# -----------------------------
+# ECOSISTEMA
+# -----------------------------
+
+class Ecosystem:
+
+    def __init__(self,n_agents=20):
+
+        self.agents = [Agent() for _ in range(n_agents)]
+
+        self.has_engine = HASEngine()
+
+        self.kocni = KOCNI()
+
+
+    def environment_field(self):
+
+        densities = [a.behavior_density() for a in self.agents]
+
+        return np.mean(densities)
+
+
+    def step(self):
+
+        V = self.environment_field()
+
+        for a in self.agents:
+
+            a.update_state(V)
+
+            rho = a.behavior_density()
+
+            self.has_engine.observe(rho)
+
+        pattern = self.kocni.analyze(self.agents)
+
+        prediction = self.kocni.anticipate()
+
+        return pattern,prediction
+
+
+# -----------------------------
+# SENSOR SÍSMICO
+# -----------------------------
+
+class SeismicSensor:
+
+    def __init__(self):
+
+        self.url = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=100"
+
+
+    def fetch(self):
+
+        data = requests.get(self.url).json()
+
+        features = data["features"]
+
+        df = pd.DataFrame([{
+            "mag": f["properties"]["mag"],
+            "place": f["properties"]["place"],
+            "time": f["properties"]["time"],
+            "lat": f["geometry"]["coordinates"][1],
+            "lon": f["geometry"]["coordinates"][0]
+        } for f in features if f["properties"]["mag"]])
+
+        df["time"] = pd.to_datetime(df["time"], unit="ms")
+
+        return df
+
+
+    def energy_model(self, df):
+
+        Z = df["mag"].values
+
+        rho = np.exp(-Z**2)
+
+        E = rho**2 + np.cos(rho)
+
+        delta_E = np.diff(E)
+
+        return E, delta_E
+
+
+# -----------------------------
+# ANÁLISIS PLANETARIO
+# -----------------------------
+
+class PlanetAnalyzer:
+
+    def analyze_seismic(self, delta_E):
+
+        threshold = np.mean(delta_E) + 2*np.std(delta_E)
+
+        anomaly = np.any(delta_E > threshold)
+
+        return anomaly
+
+
+# -----------------------------
+# STREAMLIT DASHBOARD
+# -----------------------------
+
+st.title("🌍 Ecosistema Cognitivo — Monitoreo Planetario")
+
+sensor = SeismicSensor()
+
+df = sensor.fetch()
+
+E, delta_E = sensor.energy_model(df)
+
+analyzer = PlanetAnalyzer()
+
+risk = analyzer.analyze_seismic(delta_E)
+
+
+# -----------------------------
+# MAPA
+# -----------------------------
+
+fig_map = px.scatter_geo(
+    df,
+    lat="lat",
+    lon="lon",
+    size="mag",
+    color="mag",
+    title="Eventos sísmicos globales"
+)
+
+st.plotly_chart(fig_map)
+
+
+# -----------------------------
+# ENERGÍA DEL SISTEMA
+# -----------------------------
+
+fig_energy = px.line(E, title="Energía sísmica del sistema")
+
+st.plotly_chart(fig_energy)
+
+
+# -----------------------------
+# ALERTA
+# -----------------------------
+
+if risk:
+
+    st.error("🔴 Alta anomalía energética detectada")
+
+else:
+
+    st.success("🟢 Sistema planetario estable")
+
+
+# -----------------------------
+# TABLA DE EVENTOS
+# -----------------------------
+
+st.dataframe(df)
+
+
+# -----------------------------
+# SIMULACIÓN DEL ECOSISTEMA
+# -----------------------------
+
+eco = Ecosystem()
+
+pattern, prediction = eco.step()
+
+st.subheader("Estado del Ecosistema Cognitivo")
+
+st.write("Patrón actual:", pattern)
+
+st.write("Tendencia anticipada por KOCNI:", prediction)
