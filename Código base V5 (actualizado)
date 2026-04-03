@@ -1,0 +1,141 @@
+import numpy as np
+import random
+
+# -----------------------------
+# GENOMA COGNITIVO
+# -----------------------------
+
+class CognitiveGenome:
+
+    def __init__(self):
+        self.genes = np.random.rand(5)
+
+    def mutate(self):
+        i = random.randint(0, len(self.genes)-1)
+        self.genes[i] += np.random.normal(0, 0.05)
+
+    def crossover(self, other):
+        child = CognitiveGenome()
+        child.genes = (self.genes + other.genes) / 2
+        return child
+
+
+# -----------------------------
+# AGENTE BASE (ABRAMGOCHI)
+# -----------------------------
+
+class Agent:
+
+    def __init__(self):
+
+        self.genome = CognitiveGenome()
+
+        self.phi = np.random.rand()
+        self.fitness = 0
+
+    def behavior_density(self):
+
+        rho = abs(self.phi)**2
+        return rho
+
+    def update_state(self, V_eff):
+
+        tension = np.gradient([self.phi])[0]
+
+        self.phi += -0.5 * tension + V_eff
+
+
+# -----------------------------
+# MOTOR HAS (ANTICIPACIÓN)
+# -----------------------------
+
+class HASEngine:
+
+    def __init__(self):
+        self.history = []
+
+    def observe(self, rho):
+
+        self.history.append(rho)
+
+        if len(self.history) > 50:
+            self.history.pop(0)
+
+    def detect_pattern(self):
+
+        if len(self.history) < 10:
+            return None
+
+        return np.mean(self.history)
+
+
+# -----------------------------
+# AGENTE KOCNI
+# -----------------------------
+
+class KOCNI:
+
+    def __init__(self):
+
+        self.patterns = []
+
+    def analyze(self, agents):
+
+        densities = [a.behavior_density() for a in agents]
+
+        pattern = np.mean(densities)
+
+        self.patterns.append(pattern)
+
+        return pattern
+
+    def anticipate(self):
+
+        if len(self.patterns) < 5:
+            return None
+
+        trend = np.polyfit(range(len(self.patterns)),
+                           self.patterns, 1)
+
+        return trend[0]
+
+
+# -----------------------------
+# ECOSISTEMA
+# -----------------------------
+
+class Ecosystem:
+
+    def __init__(self, n_agents=10):
+
+        self.agents = [Agent() for _ in range(n_agents)]
+
+        self.has_engine = HASEngine()
+
+        self.kocni = KOCNI()
+
+    def environment_field(self):
+
+        densities = [a.behavior_density() for a in self.agents]
+
+        V_eff = np.mean(densities)
+
+        return V_eff
+
+    def step(self):
+
+        V = self.environment_field()
+
+        for agent in self.agents:
+
+            agent.update_state(V)
+
+            rho = agent.behavior_density()
+
+            self.has_engine.observe(rho)
+
+        pattern = self.kocni.analyze(self.agents)
+
+        prediction = self.kocni.anticipate()
+
+        return pattern, prediction
