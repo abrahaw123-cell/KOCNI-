@@ -1,0 +1,284 @@
+import numpy as np
+import requests
+import sympy as sp
+import cv2
+import random
+from scipy.integrate import solve_ivp
+from collections import defaultdict
+
+print("🧠 KOCNI MASTER ENGINE v11")
+print("=================================")
+
+# ==================================================
+# MEMORIA GLOBAL
+# ==================================================
+
+knowledge_base = {}
+voynich_memory = defaultdict(int)
+state_transitions = defaultdict(lambda: defaultdict(int))
+
+# ==================================================
+# 1. DESCUBRIMIENTO DE LEYES FÍSICAS
+# ==================================================
+
+def discover_physical_laws(x, y, degree=3):
+
+    x = np.array(x, dtype=float)
+    y = np.array(y, dtype=float)
+
+    coef = np.polyfit(x, y, degree)
+    predicted = np.polyval(coef, x)
+
+    mse = np.mean((y - predicted)**2)
+    r2 = 1 - (mse / np.var(y))
+
+    xs = sp.symbols('x')
+
+    expr = sum(c * xs**i for i, c in enumerate(reversed(coef)))
+    simplified = sp.simplify(expr)
+
+    return {
+        "equation": str(simplified),
+        "coefficients": [float(c) for c in coef],
+        "mse": float(mse),
+        "r2": float(r2)
+    }
+
+# ==================================================
+# 2. SIMULADOR FÍSICO
+# ==================================================
+
+def simulate_physics(system="pendulum", params=None):
+
+    if params is None:
+        params = {}
+
+    if system == "pendulum":
+
+        L = params.get("length", 1)
+        g = params.get("g", 9.81)
+        theta0 = np.deg2rad(params.get("angle", 30))
+
+        def ode(t, y):
+
+            theta, omega = y
+            dtheta = omega
+            domega = -(g/L)*np.sin(theta)
+
+            return [dtheta, domega]
+
+        sol = solve_ivp(ode,[0,10],[theta0,0],t_eval=np.linspace(0,10,200))
+
+        period = 2*np.pi*np.sqrt(L/g)
+
+        return {
+            "system":"pendulum",
+            "period":period,
+            "max_angle":float(np.rad2deg(max(sol.y[0])))
+        }
+
+    if system == "freefall":
+
+        g = params.get("g",9.81)
+
+        t = np.linspace(0,5,50)
+
+        pos = 0.5*g*t**2
+
+        return {
+            "system":"freefall",
+            "position":pos.tolist()
+        }
+
+# ==================================================
+# 3. DATOS REALES
+# ==================================================
+
+def fetch_climate_data(lat=22.151, lon=-100.98):
+
+    try:
+
+        url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true"
+
+        r = requests.get(url,timeout=10)
+
+        data = r.json()
+
+        return {
+            "temperature": data["current_weather"]["temperature"]
+        }
+
+    except:
+
+        return {"temperature": 24}
+
+def fetch_earthquake_data():
+
+    try:
+
+        url="https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=5"
+
+        r=requests.get(url)
+
+        data=r.json()
+
+        return len(data["features"])
+
+    except:
+
+        return 0
+
+# ==================================================
+# 4. PREDICTOR HAS
+# ==================================================
+
+def has_predictor(series,horizon=5):
+
+    data=np.array(series)
+
+    trend=np.polyfit(range(len(data)),data,1)[0]
+
+    forecast=[]
+
+    last=data[-1]
+
+    for i in range(horizon):
+
+        next_val=last+trend+np.sin(i)*0.2
+
+        forecast.append(float(next_val))
+
+        last=next_val
+
+    return forecast
+
+# ==================================================
+# 5. VISIÓN ARTIFICIAL
+# ==================================================
+
+def analyze_image(path):
+
+    img=cv2.imread(path)
+
+    if img is None:
+        return {"error":"imagen no encontrada"}
+
+    gray=cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+
+    edges=cv2.Canny(gray,50,150)
+
+    edge_count=int(np.sum(edges>0))
+
+    return {
+        "edges":edge_count,
+        "shape":img.shape
+    }
+
+# ==================================================
+# 6. DECODIFICADOR VOYNICH
+# ==================================================
+
+def decode_voynich(text):
+
+    tokens=text.split()
+
+    for t in tokens:
+
+        voynich_memory[t]+=1
+
+    sorted_tokens=sorted(voynich_memory.items(),key=lambda x:x[1],reverse=True)
+
+    return {
+        "tokens":tokens,
+        "frequency":sorted_tokens[:10]
+    }
+
+# ==================================================
+# 7. AUTOAPRENDIZAJE
+# ==================================================
+
+def learn_pattern(text):
+
+    words=text.split()
+
+    for w in words:
+
+        if w not in knowledge_base:
+
+            knowledge_base[w]=0
+
+        knowledge_base[w]+=1
+
+    return knowledge_base
+
+# ==================================================
+# 8. CEREBRO CENTRAL
+# ==================================================
+
+class KOCNI:
+
+    def __init__(self):
+
+        print("🧠 KOCNI Brain Online")
+
+        self.memory={}
+
+    def discover(self,x,y):
+
+        result=discover_physical_laws(x,y)
+
+        self.memory["last_law"]=result
+
+        return result
+
+    def simulate(self,system,params):
+
+        return simulate_physics(system,params)
+
+    def world(self):
+
+        clima=fetch_climate_data()
+
+        sismos=fetch_earthquake_data()
+
+        return {
+            "clima":clima,
+            "sismos":sismos
+        }
+
+    def predict(self,data):
+
+        return has_predictor(data)
+
+    def vision(self,image):
+
+        return analyze_image(image)
+
+    def decode(self,text):
+
+        learn_pattern(text)
+
+        return decode_voynich(text)
+
+# ==================================================
+# PRUEBA DEL SISTEMA
+# ==================================================
+
+if __name__=="__main__":
+
+    ai=KOCNI()
+
+    print("\n=== LEY FÍSICA ===")
+    print(ai.discover([1,2,3,4],[9.8,19.6,29.4,39.2]))
+
+    print("\n=== SIMULACIÓN ===")
+    print(ai.simulate("pendulum",{"length":1}))
+
+    print("\n=== DATOS REALES ===")
+    print(ai.world())
+
+    print("\n=== PREDICCIÓN ===")
+    print(ai.predict([22,23,24,23.5,24]))
+
+    print("\n=== DECODIFICADOR ===")
+    print(ai.decode("daiin chol qokedy ol qokedy"))
