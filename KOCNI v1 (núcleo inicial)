@@ -1,0 +1,116 @@
+import numpy as np
+
+
+# =========================================
+# PERCEPTION LAYER
+# =========================================
+
+class PerceptionLayer:
+
+    def process(self, data):
+        return np.array(data)
+
+
+# =========================================
+# SIGNAL ANALYZER
+# =========================================
+
+class SignalAnalyzer:
+
+    def spectral_analysis(self, signal):
+        spectrum = np.fft.fft(signal)
+        energy = np.abs(spectrum) ** 2
+        return energy
+
+
+# =========================================
+# PATTERN MEMORY
+# =========================================
+
+class PatternMemory:
+
+    def __init__(self):
+        self.memory = []
+
+    def store(self, pattern):
+        self.memory.append(pattern)
+
+    def recall(self):
+        return self.memory
+
+
+# =========================================
+# ANTICIPATION ENGINE
+# =========================================
+
+class AnticipationEngine:
+
+    def evaluate(self, energy):
+
+        score = np.mean(energy)
+
+        if score > 50:
+            return "High Risk"
+
+        elif score > 20:
+            return "Medium Risk"
+
+        return "Low Risk"
+
+
+# =========================================
+# SIMULATION INTERFACE (Abrangochi)
+# =========================================
+
+class SimulationInterface:
+
+    def connect(self, simulation):
+
+        print("Connected to simulation:", simulation)
+
+
+# =========================================
+# KOCNI CORE
+# =========================================
+
+class KOCNI:
+
+    def __init__(self):
+
+        self.perception = PerceptionLayer()
+        self.analyzer = SignalAnalyzer()
+        self.memory = PatternMemory()
+        self.anticipation = AnticipationEngine()
+        self.simulation = SimulationInterface()
+
+    def run_cycle(self, data):
+
+        signal = self.perception.process(data)
+
+        energy = self.analyzer.spectral_analysis(signal)
+
+        self.memory.store(energy)
+
+        prediction = self.anticipation.evaluate(energy)
+
+        return {
+            "energy_mean": np.mean(energy),
+            "prediction": prediction
+        }
+
+
+# =========================================
+# EXECUTION
+# =========================================
+
+if __name__ == "__main__":
+
+    kocni = KOCNI()
+
+    test_signal = np.random.rand(100)
+
+    result = kocni.run_cycle(test_signal)
+
+    print("\nKOCNI Analysis")
+    print("Energy:", result["energy_mean"])
+    print("Prediction:", result["prediction"])
