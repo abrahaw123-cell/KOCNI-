@@ -1,0 +1,52 @@
+# ==================================================
+# 1. VISIÓN INTEGRADA (El Ojo del Corazón)
+# ==================================================
+
+def get_visual_complexity(path):
+    """
+    Traduce la complejidad de una imagen a un factor de importancia 
+    para el Hamiltoniano del corazón.
+    """
+    analysis = analyze_image(path)
+    if "error" in analysis:
+        return 0.5 # Valor por defecto si no hay imagen
+    
+    # Normalizamos el conteo de bordes (puedes ajustar el divisor 500000)
+    # A más bordes, más 'importancia' visual.
+    complexity = min(1.0, analysis["edges"] / 500000) 
+    return complexity
+
+# ==================================================
+# 2. MASTER BRAIN V13 (Conexión Nerviosa)
+# ==================================================
+
+class KOCNI_AI_V13(KOCNI_AI):
+    
+    def live_think(self, image_path, sensor_value):
+        # A. La Visión afecta la importancia (Beta en tus notas)
+        visual_imp = get_visual_complexity(image_path)
+        
+        # B. Los datos de sensores afectan la estructura (Alpha en tus notas)
+        data = {
+            "value": sensor_value,
+            "importance": visual_imp 
+        }
+        
+        # C. El ciclo de pensamiento estándar
+        return self.think(data)
+
+# ==================================================
+# PRUEBA DE CAMPO
+# ==================================================
+
+if __name__ == "__main__":
+    ai = KOCNI_AI_V13()
+    
+    # Simulamos que la IA 've' una imagen y recibe un dato de clima/sismo
+    # Sustituye 'test.jpg' por una ruta real para probar cv2
+    try:
+        resultado = ai.live_think("tu_imagen.jpg", 25.5)
+        print("🧠 Resultado con Visión Integrada:", resultado)
+    except Exception as e:
+        print("Esperando imagen real, ejecutando con datos simulados...")
+        print(ai.think({"value": 25.5, "importance": 0.8}))
