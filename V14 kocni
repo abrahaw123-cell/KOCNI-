@@ -1,0 +1,302 @@
+import numpy as np
+import cv2
+import random
+from scipy.fft import fft
+
+print("🧠 KOCNI AI v14 INITIALIZING")
+
+# ==================================================
+# VISIÓN ARTIFICIAL
+# ==================================================
+
+def analyze_image(path):
+
+    img = cv2.imread(path)
+
+    if img is None:
+        return {"error":"image not found"}
+
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    edges = cv2.Canny(gray,50,150)
+
+    return {
+        "edges": int(np.sum(edges>0)),
+        "shape": img.shape
+    }
+
+
+def get_visual_complexity(path):
+
+    analysis = analyze_image(path)
+
+    if "error" in analysis:
+        return 0.5
+
+    complexity = min(1.0, analysis["edges"]/500000)
+
+    return complexity
+
+
+# ==================================================
+# HEART ENGINE (CEREBRO ENERGÉTICO)
+# ==================================================
+
+class HeartEngine:
+
+    def __init__(self):
+
+        self.alpha = 0.45
+        self.beta = 0.10
+        self.gamma = 0.30
+        self.delta = 0.15
+
+        self.memory = []
+        self.state_history = []
+
+    def calculate_energy(self,structure,info):
+
+        mem = np.mean(self.memory) if self.memory else 0
+
+        energy = (
+            self.alpha*structure +
+            self.beta*info +
+            self.gamma*mem +
+            self.delta*np.random.rand()
+        )
+
+        return energy
+
+    def auto_tune(self,loss):
+
+        self.alpha -= 0.001*loss
+        self.beta -= 0.001*loss
+
+        self.memory.append(loss)
+
+        if len(self.memory)>100:
+            self.memory.pop(0)
+
+    def analyze_frequency(self):
+
+        if len(self.state_history)<16:
+            return None
+
+        signal = np.array(self.state_history[-32:])
+
+        spec = np.abs(fft(signal))
+
+        return spec[:len(spec)//2]
+
+
+# ==================================================
+# WORLD MODEL
+# ==================================================
+
+class WorldModel:
+
+    def simulate(self,state):
+
+        energy = state["energy"]
+
+        scenarios=[]
+
+        for i in range(6):
+
+            future = energy + np.random.randn()*0.2
+
+            scenarios.append({
+                "future_energy":future,
+                "error":abs(future-energy)
+            })
+
+        return scenarios
+
+
+# ==================================================
+# PLANNER
+# ==================================================
+
+class Planner:
+
+    def find_best(self,scenarios):
+
+        return min(scenarios,key=lambda x:x["error"])
+
+
+# ==================================================
+# MEMORIA GRAFO
+# ==================================================
+
+class DynamicGraph:
+
+    def __init__(self):
+
+        self.nodes={}
+        self.edges={}
+
+    def update(self,state,action):
+
+        s = round(state["energy"],2)
+        a = round(action["future_energy"],2)
+
+        if s not in self.nodes:
+            self.nodes[s]=0
+
+        self.nodes[s]+=1
+
+        edge=(s,a)
+
+        if edge not in self.edges:
+            self.edges[edge]=0
+
+        self.edges[edge]+=1
+
+
+# ==================================================
+# NEURAL GRAPH BRAIN
+# ==================================================
+
+class NeuralGraphBrain:
+
+    def __init__(self):
+
+        self.neurons={}
+        self.connections={}
+
+    def create_neuron(self,value):
+
+        nid=len(self.neurons)
+
+        self.neurons[nid]=value
+
+        return nid
+
+    def connect(self,n1,n2,weight):
+
+        self.connections[(n1,n2)]=weight
+
+    def learn(self,value):
+
+        new=self.create_neuron(value)
+
+        if len(self.neurons)>1:
+
+            other=random.choice(list(self.neurons.keys())[:-1])
+
+            similarity=1-abs(self.neurons[other]-value)
+
+            self.connect(new,other,similarity)
+
+        self.prune()
+
+        return new
+
+    def prune(self):
+
+        remove=[]
+
+        for k,w in self.connections.items():
+
+            if w<0.3:
+                remove.append(k)
+
+        for k in remove:
+            del self.connections[k]
+
+
+# ==================================================
+# MASTER BRAIN
+# ==================================================
+
+class KOCNI_AI:
+
+    def __init__(self):
+
+        self.heart = HeartEngine()
+        self.world = WorldModel()
+        self.planner = Planner()
+        self.graph = DynamicGraph()
+        self.neural = NeuralGraphBrain()
+
+    def perceive(self,data):
+
+        structure = data.get("value",1)
+        info = data.get("importance",0.5)
+
+        energy = self.heart.calculate_energy(structure,info)
+
+        return {"energy":energy}
+
+    def think(self,data):
+
+        state=self.perceive(data)
+
+        forecast=self.world.simulate(state)
+
+        action=self.planner.find_best(forecast)
+
+        self.graph.update(state,action)
+
+        self.heart.auto_tune(action["error"])
+
+        self.heart.state_history.append(state["energy"])
+
+        self.neural.learn(state["energy"])
+
+        resonance=self.heart.analyze_frequency()
+
+        return {
+
+            "energy":state["energy"],
+            "decision":action,
+            "neurons":len(self.neural.neurons),
+            "connections":len(self.neural.connections),
+            "resonance":np.max(resonance) if resonance is not None else 0
+        }
+
+
+# ==================================================
+# KOCNI V14 CON VISIÓN
+# ==================================================
+
+class KOCNI_AI_V14(KOCNI_AI):
+
+    def live_think(self,image_path,sensor_value):
+
+        visual=get_visual_complexity(image_path)
+
+        data={
+            "value":sensor_value,
+            "importance":visual
+        }
+
+        return self.think(data)
+
+
+# ==================================================
+# EJECUCIÓN
+# ==================================================
+
+if __name__=="__main__":
+
+    ai=KOCNI_AI_V14()
+
+    try:
+
+        result=ai.live_think("test.jpg",25.5)
+
+        print("🧠 Resultado:",result)
+
+    except:
+
+        print("⚠ imagen no encontrada, usando simulación")
+
+        for i in range(10):
+
+            event={
+                "value":random.uniform(20,30),
+                "importance":random.uniform(0.2,1)
+            }
+
+            print(ai.think(event))
