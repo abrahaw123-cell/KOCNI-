@@ -1,0 +1,279 @@
+import numpy as np
+import sympy as sp
+import cv2
+import random
+from scipy.integrate import solve_ivp
+from scipy.fft import fft
+from collections import defaultdict
+
+print("🧠 KOCNI AI SYSTEM INITIALIZING")
+
+# ==================================================
+# HEART ENGINE (Motor energético)
+# ==================================================
+
+class HeartEngine:
+
+    def __init__(self):
+
+        self.alpha = 0.45
+        self.beta = 0.10
+        self.gamma = 0.30
+        self.delta = 0.15
+
+        self.memory = []
+        self.state_history = []
+
+    def calculate_energy(self, structure, info):
+
+        mem = np.mean(self.memory) if self.memory else 0
+
+        energy = (
+            self.alpha * structure +
+            self.beta * info +
+            self.gamma * mem +
+            self.delta * np.random.rand()
+        )
+
+        return energy
+
+    def auto_tune(self, loss):
+
+        self.alpha -= 0.001 * loss
+        self.beta -= 0.001 * loss
+
+        self.memory.append(loss)
+
+        if len(self.memory) > 100:
+            self.memory.pop(0)
+
+    def analyze_frequency(self):
+
+        if len(self.state_history) < 16:
+            return None
+
+        signal = np.array(self.state_history[-32:])
+
+        spec = np.abs(fft(signal))
+
+        return spec[:len(spec)//2]
+
+
+# ==================================================
+# WORLD MODEL
+# ==================================================
+
+class WorldModel:
+
+    def simulate(self, state):
+
+        energy = state["energy"]
+
+        scenarios = []
+
+        for i in range(6):
+
+            future = energy + np.random.randn()*0.2
+
+            scenarios.append({
+                "future_energy": future,
+                "error": abs(future-energy)
+            })
+
+        return scenarios
+
+
+# ==================================================
+# PLANNER
+# ==================================================
+
+class Planner:
+
+    def find_best(self, scenarios):
+
+        best = min(scenarios, key=lambda x:x["error"])
+
+        return best
+
+
+# ==================================================
+# DYNAMIC GRAPH MEMORY
+# ==================================================
+
+class DynamicGraph:
+
+    def __init__(self):
+
+        self.nodes = {}
+        self.edges = {}
+
+    def update(self, state, action):
+
+        s = round(state["energy"],2)
+        a = round(action["future_energy"],2)
+
+        if s not in self.nodes:
+            self.nodes[s] = 0
+
+        self.nodes[s]+=1
+
+        edge=(s,a)
+
+        if edge not in self.edges:
+            self.edges[edge]=0
+
+        self.edges[edge]+=1
+
+
+# ==================================================
+# SCIENTIFIC DISCOVERY
+# ==================================================
+
+def discover_physical_law(x,y):
+
+    x=np.array(x)
+    y=np.array(y)
+
+    coef=np.polyfit(x,y,2)
+
+    xs=sp.symbols('x')
+
+    expr=sum(c*xs**i for i,c in enumerate(reversed(coef)))
+
+    return str(sp.simplify(expr))
+
+
+# ==================================================
+# PREDICTOR
+# ==================================================
+
+def has_predictor(series):
+
+    data=np.array(series)
+
+    trend=np.polyfit(range(len(data)),data,1)[0]
+
+    forecast=[]
+
+    last=data[-1]
+
+    for i in range(5):
+
+        val=last+trend+np.sin(i)*0.2
+
+        forecast.append(val)
+
+        last=val
+
+    return forecast
+
+
+# ==================================================
+# VISION ENGINE
+# ==================================================
+
+def analyze_image(path):
+
+    img=cv2.imread(path)
+
+    if img is None:
+        return {"error":"image not found"}
+
+    gray=cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+
+    edges=cv2.Canny(gray,50,150)
+
+    return {
+        "edges":int(np.sum(edges>0)),
+        "shape":img.shape
+    }
+
+
+# ==================================================
+# DECODER
+# ==================================================
+
+decoder_memory=defaultdict(int)
+
+def decode_text(text):
+
+    words=text.split()
+
+    for w in words:
+        decoder_memory[w]+=1
+
+    return sorted(decoder_memory.items(),key=lambda x:x[1],reverse=True)
+
+
+# ==================================================
+# MASTER BRAIN
+# ==================================================
+
+class KOCNI_AI:
+
+    def __init__(self):
+
+        self.heart=HeartEngine()
+        self.world=WorldModel()
+        self.graph=DynamicGraph()
+        self.planner=Planner()
+
+    def perceive(self,data):
+
+        structure=data.get("value",1)
+        info=data.get("importance",0.5)
+
+        energy=self.heart.calculate_energy(structure,info)
+
+        return {"energy":energy}
+
+    def think(self,data):
+
+        state=self.perceive(data)
+
+        forecast=self.world.simulate(state)
+
+        action=self.planner.find_best(forecast)
+
+        self.graph.update(state,action)
+
+        self.heart.auto_tune(action["error"])
+
+        self.heart.state_history.append(state["energy"])
+
+        resonance=self.heart.analyze_frequency()
+
+        return {
+            "energy":state["energy"],
+            "decision":action,
+            "resonance":np.max(resonance) if resonance is not None else 0
+        }
+
+
+# ==================================================
+# RUN SYSTEM
+# ==================================================
+
+if __name__=="__main__":
+
+    ai=KOCNI_AI()
+
+    for i in range(10):
+
+        event={
+            "value":random.uniform(10,30),
+            "importance":random.uniform(0.1,1)
+        }
+
+        result=ai.think(event)
+
+        print("Cycle",i,result)
+
+    print("\nDiscover Law:")
+    print(discover_physical_law([1,2,3],[9.8,19.6,29.4]))
+
+    print("\nPrediction:")
+    print(has_predictor([22,23,24,23.5,24]))
+
+    print("\nDecoder:")
+    print(decode_text("daiin chol qokedy qokedy"))
