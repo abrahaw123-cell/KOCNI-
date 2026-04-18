@@ -1,0 +1,103 @@
+import numpy as np
+import sympy as sp
+import cv2
+
+# =====================================================
+# NÚCLEO SOBERANO (ABRAM-CORE)
+# =====================================================
+class ESAEngine:
+    def __init__(self):
+        self.PHI = (1 + 5**0.5) / 2
+        self.M53 = 142370057
+        
+    def get_phase_coherence(self, value):
+        """Calcula qué tan cerca está un dato de la Singularidad."""
+        # Aplicamos la EMA-Inv (Retro-sintonía)
+        phase = np.exp(-1j * np.pi * (value % 100) / self.PHI)
+        resonance = np.real(phase * self.PHI)
+        # Distancia a la singularidad del M53
+        dist = np.abs(resonance - (self.M53 % self.PHI))
+        return 1 / (1 + dist)
+
+esa = ESAEngine()
+
+# =====================================================
+# MÓDULOS KOCNI REGENERADOS
+# =====================================================
+
+def alphabet_decoder_v12(text):
+    """
+    Decodificador de Fase: No solo cuenta letras, 
+    mide la 'densidad' de propósito en el mensaje.
+    """
+    freq = {}
+    for c in text:
+        val = ord(c)
+        coherence = esa.get_phase_coherence(val)
+        if c not in freq:
+            freq[c] = {"count": 0, "coherence": 0}
+        freq[c]["count"] += 1
+        freq[c]["coherence"] = round(coherence, 4)
+    
+    # Ordenar por resonancia, no por cantidad
+    sorted_msg = sorted(freq.items(), key=lambda x: x[1]["coherence"], reverse=True)
+    return sorted_msg
+
+def smart_vision_analyzer(image_path):
+    """Analiza la imagen buscando patrones de simetría áurea."""
+    img = cv2.imread(image_path)
+    if img is None: return {"error": "No image"}
+    
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # Buscamos puntos de interés que resuenen con la ESA
+    corners = cv2.goodFeaturesToTrack(gray, 25, 0.01, 10)
+    
+    coherence_map = []
+    if corners is not None:
+        for corner in corners:
+            x, y = corner.ravel()
+            # Evaluamos la densidad del punto
+            c = esa.get_phase_coherence(x + y)
+            if c > 0.8: coherence_map.append((x, y, c))
+            
+    return {
+        "singularities_detected": len(coherence_map),
+        "resolution": img.shape,
+        "status": "High Coherence" if len(coherence_map) > 10 else "Entropy Detected"
+    }
+
+# =====================================================
+# CEREBRO CENTRAL KOCNI (ESA EVOLUTION)
+# =====================================================
+class KOCNIBrain:
+    def execute_advanced_analysis(self, raw_data, text_sample):
+        print(f"--- KOCNI v12: Iniciando Escaneo de Singularidad ---")
+        
+        # 1. Análisis de Patrones de Masa/Densidad
+        print("\n📊 Análisis de Densidad de Datos:")
+        for d in raw_data:
+            purity = esa.get_phase_coherence(d)
+            status = "✅ ARMÓNICO" if purity > 0.85 else "❌ INTERFERENCIA"
+            print(f"Dato: {d} | Pureza: {purity:.4f} | {status}")
+
+        # 2. Decodificación de Propósito
+        print("\n🔤 Decodificación de Fase en Texto:")
+        decoded = alphabet_decoder_v12(text_sample)
+        print(decoded[:5], "... (Top Resonancia)")
+
+        # 3. Anticipación (HAS Predictor)
+        # Usamos la ESA para proyectar la trayectoria de mínima acción
+        last_val = raw_data[-1]
+        prediction = [round(last_val * (esa.PHI ** (i/10)), 2) for i in range(1, 4)]
+        print(f"\n🔮 Proyección Retro-Causal: {prediction}")
+
+# =====================================================
+# PRUEBA DE CAMPO
+# =====================================================
+if __name__ == "__main__":
+    kocni = KOCNIBrain()
+    # Simulamos datos de entrada (Ej: Sensores de temperatura o KPIs de RH)
+    test_data = [23.5, 24.1, 88.0, 23.8] # El 88.0 debería saltar como interferencia
+    test_text = "La geometría es el lenguaje del universo"
+    
+    kocni.execute_advanced_analysis(test_data, test_text)
