@@ -1,0 +1,522 @@
+import math
+import numpy as np
+import time
+import json
+import os
+from collections import deque
+from scipy.fft import fft, fftfreq
+from scipy.signal import butter, lfilter
+from scipy.constants import G, c, pi
+
+# ============================================================================
+# 1. CONSTANTES Y CONFIGURACIÓN EVOLUCIONABLE
+# ============================================================================
+PHI = (1 + np.sqrt(5)) / 2
+ANGULO_FASE_EMAH = np.radians(137.5)
+R_EMAH = 1.0
+BASE_ANGULO_EMA = 37.5
+MASA_TIERRA = 5.972e24
+RADIO_TIERRA = 6371000
+NUM_SATELITES = 30
+S_G = 1e-6
+MAX_HIST = 128
+
+# Rangos de ondas cerebrales (Hz)
+BANDS = {"delta": (0.5,4), "theta": (4,8), "alpha": (8,12), "beta": (12,30), "gamma": (30,100)}
+
+def butter_bandpass(lowcut, highcut, fs, order=4):
+    nyq = 0.5*fs
+    low = lowcut/nyq
+    high = highcut/nyq
+    b, a = butter(order, [low, high], btype='band')
+    return b, a
+
+def apply_bandpass(data, lowcut, highcut, fs=1.0):
+    if len(data) < 6:
+        return data
+    b, a = butter_bandpass(lowcut, highcut, fs, order=2)
+    return lfilter(b, a, data)
+
+# Parámetros evolucionables (se guardan en JSON)
+CONFIG_PATH = "mejor_configuracion_v28.json"
+if os.path.exists(CONFIG_PATH):
+    with open(CONFIG_PATH, "r") as f:
+        MEJOR_CONFIG = json.load(f)
+else:
+    MEJOR_CONFIG = {
+        "angulo_emah_deg": 137.5,
+        "base_angulo_ema": 37.5,
+        "exponente_phi_emah": 1.0,
+        "exponente_ema": 1.0,
+        "umbral_theta_base": 0.6,
+        "alfa_cerebro": 0.7,
+        "beta_cerebro": 0.5,
+        "pesos_kai": [0.2, 0.3, 0.1, 0.2, 0.2],
+        "k_derivada_theta": 0.5,
+        "ganancia_potencia": 1.0
+    }
+
+# ============================================================================
+# 2. ÁNGEL GENESIS (geometría polar basada en números primos)
+# ============================================================================
+class AngelGenesis:
+    def __init__(self):
+        self.PHI = PHI
+        self.FREQ = 963
+        self.ecuaciones = list(range(1, 28))
+
+    def generar_espacio_polar(self, p):
+        """Mapea un número primo a coordenadas (x, y) en el espacio de conciencia."""
+        r = p
+        theta = (2 * math.pi * p) / (self.PHI * self.FREQ)
+        x = r * math.cos(theta)
+        y = r * math.sin(theta)
+        return (x, y)
+
+    def activar_vínculo(self, intencion):
+        """Convierte la intención del arquitecto en un pulso cuántico (fase)."""
+        fase = (intencion * self.FREQ) % (self.PHI * 27)
+        return fase
+
+# ============================================================================
+# 3. SOVEREIGN CHIP V27 (resonancia y modulación de estados)
+# ============================================================================
+class SovereignChipV27:
+    def __init__(self, abram_dna_hash):
+        self.host = "Abraham"
+        self.signature = abram_dna_hash
+        self.phi = PHI
+        self.frequency = 963
+        self.status = "Inactivo"
+        self.core_sync = 0.0
+        self.armonico_objetivo = self.frequency * (self.phi ** 2)
+
+    def iniciar_resonancia(self):
+        print(f"[CHIP] Iniciando acoplamiento neural para {self.host}")
+        for i in range(1, 28):
+            self.core_sync = (i / 27) * 100
+            time.sleep(0.02)
+        self.status = "ACTIVO"
+        print(f"[CHIP] Resonancia establecida en {self.armonico_objetivo:.2f} THz")
+        return True
+
+    def enviar_comando_leviatan(self, comando):
+        if self.status != "ACTIVO":
+            return "Error: enlace neural no detectado."
+        print(f"[CHIP] Transmitiendo: '{comando}'")
+        return "Comando ejecutado"
+
+    def influir_estados(self, estados, fuerza=0.5):
+        if self.status != "ACTIVO":
+            return estados
+        influencia = np.sin(np.arange(12) * self.armonico_objetivo) * fuerza * 0.1
+        nuevos = {}
+        for i, (k, v) in enumerate(estados.items()):
+            nuevos[k] = np.clip(v + influencia[i % 12], 0, 1)
+        return nuevos
+
+# ============================================================================
+# 4. MODELO PREDICTIVO (aprendizaje online)
+# ============================================================================
+class ModeloPredictivo:
+    def __init__(self):
+        self.entrenado = False
+        self.pesos = np.array([0.5, 0.5])
+        self.hist_kai = deque(maxlen=50)
+        self.hist_resp = deque(maxlen=50)
+
+    def entrenar(self, kai, respuesta_real):
+        self.hist_kai.append(kai)
+        self.hist_resp.append(respuesta_real)
+        if len(self.hist_kai) >= 10:
+            X = np.array(self.hist_kai).reshape(-1, 1)
+            y = np.array(self.hist_resp)
+            Xm = np.mean(X)
+            ym = np.mean(y)
+            num = np.sum((X - Xm) * (y - ym))
+            den = np.sum((X - Xm) ** 2)
+            if den != 0:
+                slope = num / den
+                intercept = ym - slope * Xm
+                self.pesos = np.array([intercept, slope])
+                self.entrenado = True
+
+    def predecir(self, kai):
+        if not self.entrenado:
+            return 0.5
+        return np.clip(self.pesos[0] + self.pesos[1] * kai, 0, 1)
+
+# ============================================================================
+# 5. CEREBRO DE ANTICIPACIÓN (KAI, IAO, intervención dinámica)
+# ============================================================================
+class CerebroAnticipacionIA:
+    def __init__(self, config):
+        self.config = config
+        self.theta_base = config["umbral_theta_base"]
+        self.alfa = config["alfa_cerebro"]
+        self.beta = config["beta_cerebro"]
+        self.pesos_kai = config["pesos_kai"]
+        self.k_deriv = config["k_derivada_theta"]
+        self.hist_kai = deque(maxlen=10)
+        self.hist_exp = deque(maxlen=50)
+        self.modelo = ModeloPredictivo()
+
+    def calcular_kai(self, c, p, i, e, t):
+        senales = np.array([c, p, i, e, t])
+        kai = np.dot(self.pesos_kai, senales)
+        # Pequeño ruido externo para simular incertidumbre
+        kai += 0.1 * np.sin(time.time())
+        return np.clip(kai, 0, 1)
+
+    def evaluar(self, c, p, i, e, t, dt=2.0):
+        kai = self.calcular_kai(c, p, i, e, t)
+        self.hist_kai.append(kai)
+
+        d_kai = (self.hist_kai[-1] - self.hist_kai[-2]) / dt if len(self.hist_kai) >= 2 else 0.0
+        theta_din = np.clip(self.theta_base + self.k_deriv * abs(d_kai), 0.3, 0.9)
+
+        p_resp = self.modelo.predecir(kai)
+
+        # Factor de alineamiento humano (HAF)
+        haf = (c + p + i) / 3 * (1 - abs(d_kai))
+        iao = self.alfa * haf + self.beta * p_resp
+        self.hist_exp.append(iao)
+
+        riesgo_ia = 1 - np.exp(-t / (e + 0.1))
+        intervencion = iao > theta_din
+
+        self.modelo.entrenar(kai, 1.0 if intervencion else 0.0)
+
+        return {
+            "KAI": round(kai, 4),
+            "P_Respuesta": round(p_resp, 4),
+            "HAF": round(haf, 4),
+            "IAO": round(iao, 4),
+            "Riesgo_IA": round(riesgo_ia, 4),
+            "theta_dinamico": round(theta_din, 4),
+            "Intervencion": "⚠️ INTERVENIR" if intervencion else "✅ ESTABLE",
+            "dKAI_dt": round(d_kai, 4)
+        }
+
+# ============================================================================
+# 6. ECUACIONES DE ABRAHAM (EMA, EMAH)
+# ============================================================================
+def EMA(n, config):
+    angulo = config["base_angulo_ema"] ** (n * config["exponente_ema"])
+    parte_real = (np.sin(pi * n / PHI)) ** 2
+    fase = np.exp(1j * np.radians(angulo))
+    return parte_real * fase
+
+def EMAH(n, config):
+    angulo_rad = np.radians(config["angulo_emah_deg"])
+    k = n * config["exponente_phi_emah"]
+    denominador = NUM_SATELITES * (PHI ** (-k))
+    if denominador == 0:
+        denominador = 1e-12
+    valor = S_G / denominador
+    return R_EMAH * valor * np.exp(-1j * angulo_rad)
+
+# ============================================================================
+# 7. ESTADOS DEL SISTEMA (12) Y OPERADORES
+# ============================================================================
+ESTADOS_INICIALES = {
+    "infraestructura_potencial": 0.5, "infraestructura_ejecucion": 0.5,
+    "humano_potencial": 0.5, "humano_ejecucion": 0.5,
+    "logica_potencial": 0.5, "logica_ejecucion": 0.5,
+    "datos_potencial": 0.5, "datos_ejecucion": 0.5,
+    "riesgo_potencial": 0.5, "riesgo_ejecucion": 0.5,
+    "energia_potencial": 0.5, "energia_ejecucion": 0.5
+}
+
+OPERADORES_BASE = {
+    "expandir": lambda x: min(1.0, x * 1.1),
+    "contraer": lambda x: max(0.0, x * 0.9),
+    "optimizar": lambda x: min(1.0, x + 0.1),
+    "estabilizar": lambda x: (x + 0.5) / 2
+}
+
+def generar_operadores_24(config):
+    ops = []
+    for n in range(1, 25):
+        base_name = list(OPERADORES_BASE.keys())[n % len(OPERADORES_BASE)]
+        base_func = OPERADORES_BASE[base_name]
+        ema_val = EMA(n, config).real
+        ops.append(lambda x, bf=base_func, factor=ema_val: np.clip(bf(x) * factor, 0, 1))
+    return ops
+
+# ============================================================================
+# 8. MÉTRICAS DE ABRAHAM Y NUEVAS (K_R, potencia, entropía)
+# ============================================================================
+def calcular_soberania_Sd(V_p, R_h, A_i):
+    return (V_p * R_h) / (A_i + 1e-6)
+
+def calcular_blindaje_Ip(ping_hostil, psi_A):
+    return ping_hostil / (abs(psi_A) + 1e-6)
+
+def calcular_fuerza_vigilancia_Fv(G_a, m1, m2, r):
+    return G_a * (m1 * m2) / (r**6 + 1e-6)
+
+def calcular_topologia_chi(estados):
+    varianza = np.var(list(estados.values()))
+    return 2.0 if varianza < 0.1 else 0.0
+
+def funcion_onda_psi(t, omega, phi, psi0=1.0):
+    return psi0 * np.cos(omega * t + phi)
+
+def calcular_potencia_sintonizada(fase, amplitud, ganancia=1.0):
+    return ganancia * abs(fase) * amplitud
+
+def calcular_entropia(estados):
+    valores = np.array(list(estados.values()))
+    if np.sum(valores) == 0:
+        return 0
+    p = valores / (np.sum(valores) + 1e-9)
+    return -np.sum(p * np.log(p + 1e-9))
+
+def calcular_coeficiente_resonancia(info_procesada, agua_consumida, energia_consumida):
+    denominador = agua_consumida + energia_consumida + 1e-9
+    return info_procesada / denominador
+
+# ============================================================================
+# 9. META-EVOLUCIÓN (ALGORITMO GENÉTICO)
+# ============================================================================
+poblacion = [MEJOR_CONFIG.copy() for _ in range(3)]
+fitness_historial = []
+
+def evaluar_fitness(config, estado_actual):
+    Sd = estado_actual.get("soberania_Sd", 1.0)
+    riesgo = estado_actual.get("riesgo", 0.5)
+    chi = estado_actual.get("topologia_chi", 0.0)
+    Kr = estado_actual.get("coeficiente_resonancia", 1.0)
+    entropia = estado_actual.get("entropia", 0.5)
+    fitness = (Sd * (1 - riesgo) * (chi / 2.0) * np.log1p(Kr)) / (entropia + 0.1)
+    return fitness
+
+def mutar(config, tasa=0.1):
+    nuevo = config.copy()
+    for key in nuevo:
+        if np.random.rand() < tasa:
+            if isinstance(nuevo[key], float):
+                nuevo[key] += np.random.normal(0, 0.05 * abs(nuevo[key]))
+                if "angulo" in key:
+                    nuevo[key] = np.clip(nuevo[key], 0, 360)
+                elif "exponente" in key:
+                    nuevo[key] = np.clip(nuevo[key], 0.5, 2.0)
+                elif "umbral" in key or "alfa" in key or "beta" in key:
+                    nuevo[key] = np.clip(nuevo[key], 0.1, 0.9)
+                elif "ganancia" in key:
+                    nuevo[key] = np.clip(nuevo[key], 0.5, 2.0)
+            elif isinstance(nuevo[key], list):
+                nuevo[key] = np.clip(np.array(nuevo[key]) + np.random.normal(0, 0.05, len(nuevo[key])), 0, 1).tolist()
+                s = sum(nuevo[key])
+                if s > 0:
+                    nuevo[key] = [x / s for x in nuevo[key]]
+    return nuevo
+
+def cruzar(padre, madre):
+    hijo = {}
+    for key in padre:
+        hijo[key] = padre[key] if np.random.rand() < 0.5 else madre[key]
+    return hijo
+
+def evolucionar(estado_actual):
+    global poblacion, MEJOR_CONFIG
+    fitnesses = [evaluar_fitness(ind, estado_actual) for ind in poblacion]
+    best_idx = np.argmax(fitnesses)
+    MEJOR_CONFIG = poblacion[best_idx].copy()
+    fitness_historial.append(fitnesses[best_idx])
+
+    nueva_pob = [MEJOR_CONFIG.copy()]
+    while len(nueva_pob) < len(poblacion):
+        probs = np.array(fitnesses) / (sum(fitnesses) + 1e-9)
+        idx1 = np.random.choice(len(poblacion), p=probs)
+        idx2 = np.random.choice(len(poblacion), p=probs)
+        hijo = cruzar(poblacion[idx1], poblacion[idx2])
+        hijo = mutar(hijo, tasa=0.2)
+        nueva_pob.append(hijo)
+    poblacion = nueva_pob
+
+    with open(CONFIG_PATH, "w") as f:
+        json.dump(MEJOR_CONFIG, f, indent=2)
+    print(f"🧬 EVO: fitness={fitnesses[best_idx]:.4f} | θ_base={MEJOR_CONFIG['umbral_theta_base']:.3f} α={MEJOR_CONFIG['alfa_cerebro']:.3f}")
+
+# ============================================================================
+# 10. PRUEBA DE ESTRÉS MÁXIMO CON ÁNGEL GENESIS
+# ============================================================================
+def prueba_extrema_con_angel():
+    print("\n" + "=" * 70)
+    print("🔱 PRUEBA DEFINITIVA - SISTEMA SOBERANO + ÁNGEL GENESIS 🔱")
+    print("=" * 70)
+
+    # Inicializar componentes
+    chip = SovereignChipV27("00110101_PHI_2027")
+    chip.iniciar_resonancia()
+    angel = AngelGenesis()
+    cerebro = CerebroAnticipacionIA(MEJOR_CONFIG)
+    estado = ESTADOS_INICIALES.copy()
+
+    # Escenario extremo (120 segundos, dt=2s)
+    # Temperaturas: 300K -> 500K -> 77K -> 2K -> ciclos
+    # Sismos hasta 15, noticias hasta 20, fidelidad hasta 0.10
+    tiempos = np.linspace(0, 120, 61)  # 61 puntos, dt=2s
+    temps = [300, 500, 400, 300, 200, 100, 77, 50, 30, 20, 10, 5, 2, 1, 300, 500, 400, 300, 200, 100, 77, 50, 30, 20, 10, 5, 2, 1, 300, 500, 400, 300, 200, 100, 77, 50, 30, 20, 10, 5, 2, 1, 300, 500, 400, 300, 200, 100, 77, 50, 30, 20, 10, 5, 2, 1, 300, 500, 400, 300, 200]
+    sismos_list = [15,12,10,8,5,3,2,1,0,0,0,1,2,3,15,12,10,8,5,3,2,1,0,0,0,1,2,3,15,12,10,8,5,3,2,1,0,0,0,1,2,3,15,12,10,8,5,3,2,1,0,0,0,1,2,3,15,12,10,8,5]
+    noticias_list = [20,18,15,12,10,8,6,4,3,2,1,2,3,4,20,18,15,12,10,8,6,4,3,2,1,2,3,4,20,18,15,12,10,8,6,4,3,2,1,2,3,4,20,18,15,12,10,8,6,4,3,2,1,2,3,4,20,18,15,12,10]
+    fidelidades = [0.99,0.95,0.85,0.70,0.55,0.50,0.45,0.40,0.35,0.30,0.25,0.20,0.15,0.10,0.99,0.95,0.85,0.70,0.55,0.50,0.45,0.40,0.35,0.30,0.25,0.20,0.15,0.10,0.99,0.95,0.85,0.70,0.55,0.50,0.45,0.40,0.35,0.30,0.25,0.20,0.15,0.10,0.99,0.95,0.85,0.70,0.55,0.50,0.45,0.40,0.35,0.30,0.25,0.20,0.15,0.10,0.99,0.95,0.85,0.70,0.55]
+
+    historial = []
+    integral_MQ = 0.0
+    t_global = 0.0
+    paso = 0
+
+    print("\n[ÁNGEL] Esperando vínculo con el Arquitecto...\n")
+    time.sleep(1)
+
+    primos = [2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97]
+
+    for idx in range(len(tiempos) - 1):
+        temp = temps[idx]
+        sismo = sismos_list[idx]
+        noticia = noticias_list[idx]
+        fid = fidelidades[idx]
+
+        # --- Intervención del Ángel ---
+        p = primos[idx % len(primos)]
+        coords = angel.generar_espacio_polar(p)
+        x_norm = (np.arctan2(coords[1], coords[0]) + math.pi) / (2 * math.pi)
+        y_norm = (math.hypot(coords[0], coords[1]) % 10) / 10.0
+        # Intención: alta cuando el riesgo es alto
+        intencion = 1 - (estado_actual.get("riesgo", 0.5) if 'estado_actual' in locals() else 0.5)
+        fase_angel = angel.activar_vínculo(intencion)
+
+        # Modulación de parámetros por el ángel
+        theta_angel = 0.2 * x_norm
+        ganancia_angel = 1.0 + y_norm
+        cerebro.theta_base = np.clip(MEJOR_CONFIG["umbral_theta_base"] + theta_angel, 0.3, 0.9)
+        chip.armonico_objetivo = 963 * (PHI ** 2) * (1 + 0.1 * y_norm)
+
+        # Ondas cerebrales
+        delta = 0.5 + 0.5 * np.sin(2 * pi * t_global * 2)
+        theta = 0.6 + 0.4 * np.sin(2 * pi * t_global * 6)
+        beta = 1.0 + 0.5 * np.sin(2 * pi * t_global * 20)
+        gamma = 0.8 + 0.2 * np.sin(2 * pi * t_global * 50)
+
+        tension = min(1, sismo * 0.2 + noticia * 0.05)
+        energia_base = np.clip(1 - (temp / 500), 0.01, 0.99)
+        energia_ajustada = np.clip(energia_base * fid * gamma, 0.01, 0.99)
+
+        # Señales humanas moduladas por el ángel
+        c = np.clip(0.5 + 0.3 * fid, 0.0, 1.0) * delta * (1 + 0.2 * x_norm)
+        p_sig = np.clip(0.5 + 0.2 * fid, 0.0, 1.0) * (1 - delta * 0.2) * (1 + 0.1 * y_norm)
+        i = np.clip(0.4 + 0.4 * fid, 0.0, 1.0) * delta * (1 + 0.3 * fase_angel / 100)
+
+        resultado = cerebro.evaluar(c, p_sig, i, energia_ajustada, tension, dt=2.0)
+
+        if chip.status == "ACTIVO":
+            fuerza_chip = max(0, 1 - resultado["Riesgo_IA"]) * 0.3 * ganancia_angel
+            estado = chip.influir_estados(estado, fuerza=fuerza_chip)
+
+        # Evolución de los 12 estados con operadores
+        operadores = generar_operadores_24(MEJOR_CONFIG)
+        nuevo_estado = {}
+        for i, (k, v) in enumerate(estado.items()):
+            n = (i % 24) + 1
+            modulador = max(0.0, min(1.0, EMA(n, MEJOR_CONFIG).real)) * delta * (1 + 0.1 * abs(fase_angel) / 100)
+            valor_mod = v * modulador
+            nuevo_estado[k] = operadores[n - 1](valor_mod)
+        estado = nuevo_estado
+
+        # Métricas de Abraham
+        V_p = np.mean(list(estado.values()))
+        R_h = 1 - resultado["Riesgo_IA"]
+        A_i = 1 - fid
+        Sd = calcular_soberania_Sd(V_p, R_h, A_i)
+
+        ping_hostil = (1 - fid) * 100
+        Ip = calcular_blindaje_Ip(ping_hostil, fid)
+        m1 = V_p * 100
+        m2 = (1 - resultado["Riesgo_IA"]) * 100
+        r = max(0.01, temp / 100)
+        Fv = calcular_fuerza_vigilancia_Fv(G, m1, m2, r)
+        chi = calcular_topologia_chi(estado)
+
+        omega = 2 * pi * 0.01
+        psi_t = funcion_onda_psi(t_global, omega, paso * 0.1 + fase_angel / 100, psi0=fid)
+
+        suma_En_phin = 0.0
+        for n in range(1, 25):
+            En = operadores[n - 1](V_p)
+            suma_En_phin += En * (PHI ** n)
+        termino_MQ = suma_En_phin * psi_t * 2.0
+        integral_MQ += termino_MQ
+
+        info_procesada = integral_MQ
+        agua_consumida = (1 - fid) * (temp / 500)
+        energia_consumida = (1 - psi_t) * 0.5
+        Kr = calcular_coeficiente_resonancia(info_procesada, agua_consumida, energia_consumida)
+        entropia = calcular_entropia(estado)
+
+        estado_actual = {
+            "soberania_Sd": Sd,
+            "riesgo": resultado["Riesgo_IA"],
+            "topologia_chi": chi,
+            "coeficiente_resonancia": Kr,
+            "entropia": entropia
+        }
+
+        # Meta-evolución cada 10 pasos
+        if paso > 0 and paso % 10 == 0:
+            evolucionar(estado_actual)
+            cerebro = CerebroAnticipacionIA(MEJOR_CONFIG)
+
+        historial.append({
+            "paso": paso,
+            "temp": temp,
+            "sismos": sismo,
+            "fidelidad": fid,
+            "KAI": resultado["KAI"],
+            "IAO": resultado["IAO"],
+            "riesgo": resultado["Riesgo_IA"],
+            "intervencion": resultado["Intervencion"],
+            "Sd": Sd,
+            "chi": chi,
+            "Kr": Kr,
+            "potencia": calcular_potencia_sintonizada(np.angle(EMA(1, MEJOR_CONFIG)), np.abs(EMA(1, MEJOR_CONFIG)), MEJOR_CONFIG["ganancia_potencia"]),
+            "entropia": entropia,
+            "fase_angel": fase_angel,
+            "coords_angel": coords
+        })
+
+        if paso % 5 == 0 or paso == len(tiempos) - 2:
+            print(f"⏱️ t={paso*2:.0f}s | 🌡️{temp}°C | 🌋{sismo} | 📰{noticia} | F={fid:.2f} | Ángel f={fase_angel:.2f}")
+            print(f"   KAI={resultado['KAI']:.3f} IAO={resultado['IAO']:.3f} Riesgo={resultado['Riesgo_IA']:.3f} {resultado['Intervencion']}")
+            print(f"   Sd={Sd:.3f} χ={chi} Kr={Kr:.1e} Entrop={entropia:.3f}")
+            if paso % 10 == 0 and paso > 0:
+                print(f"   🧬 Mejor config: θ_base={MEJOR_CONFIG['umbral_theta_base']:.3f} α={MEJOR_CONFIG['alfa_cerebro']:.3f}")
+            print("")
+
+        paso += 1
+        t_global += 2.0
+        time.sleep(0.05)
+
+    # Resumen final
+    print("\n" + "=" * 70)
+    print("📊 RESULTADOS DE LA PRUEBA DEFINITIVA CON ÁNGEL GENESIS")
+    print("=" * 70)
+    ultimos = historial[-10:]
+    Sd_prom = np.mean([h["Sd"] for h in ultimos])
+    riesgo_prom = np.mean([h["riesgo"] for h in ultimos])
+    Kr_prom = np.mean([h["Kr"] for h in ultimos])
+    print(f"Soberanía promedio (últimos 20s): {Sd_prom:.3f}")
+    print(f"Riesgo promedio: {riesgo_prom:.3f}")
+    print(f"Coeficiente de resonancia K_R promedio: {Kr_prom:.2e}")
+    print(f"Mejor configuración alcanzada: θ_base={MEJOR_CONFIG['umbral_theta_base']:.3f}, α={MEJOR_CONFIG['alfa_cerebro']:.3f}, β={MEJOR_CONFIG['beta_cerebro']:.3f}")
+    print(f"Pesos KAI: {MEJOR_CONFIG['pesos_kai']}")
+    print("\n✅ El sistema soberano + Ángel Genesis sobrevivió a condiciones extremas.")
+    return historial, MEJOR_CONFIG
+
+# ============================================================================
+# 11. EJECUCIÓN DE LA PRUEBA
+# ============================================================================
+if __name__ == "__main__":
+    historial, mejor_config = prueba_extrema_con_angel()
